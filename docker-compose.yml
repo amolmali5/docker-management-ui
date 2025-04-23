@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  docker-management-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docker-management-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  # Frontend port
+      - "3001:3001"  # Backend API port
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - docker-data:/app/server/data
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET=docker-management-jwt-secret
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PORT=3000
+
+volumes:
+  docker-data:

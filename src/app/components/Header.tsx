@@ -1,0 +1,189 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { FaBell, FaUser, FaCog, FaSignOutAlt, FaMoon, FaSun } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+
+export default function Header() {
+  const { user, logout, updateUserSettings } = useAuth();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // Get page title based on current path
+  const getPageTitle = () => {
+    if (pathname === '/') return 'Dashboard';
+    if (pathname?.startsWith('/containers')) {
+      if (pathname === '/containers') return 'Containers';
+      return 'Container Details';
+    }
+    if (pathname === '/images') return 'Images';
+    if (pathname === '/networks') return 'Networks';
+    if (pathname === '/volumes') return 'Volumes';
+    if (pathname === '/profile') return 'Your Profile';
+    if (pathname === '/settings') return 'Settings';
+    if (pathname === '/login') return 'Login';
+    if (pathname === '/register') return 'Register';
+    return 'Docker Management UI';
+  };
+
+  // Toggle dark mode
+  const toggleDarkMode = async () => {
+    // Get current state before toggling
+    const currentIsDark = document.documentElement.classList.contains('dark');
+    const newMode = !currentIsDark;
+
+    // Update UI immediately
+    setIsDarkMode(newMode);
+    document.documentElement.classList.toggle('dark', newMode);
+
+    // Store in localStorage for persistence
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+    console.log('Theme toggled to:', newMode ? 'dark' : 'light');
+
+    // Save user preference if logged in
+    if (user) {
+      try {
+        await updateUserSettings({ theme: newMode ? 'dark' : 'light' });
+        console.log('Theme updated successfully in user settings');
+      } catch (err) {
+        console.error('Failed to update theme in user settings:', err);
+        // We don't revert the UI since we've already saved to localStorage
+      }
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Set initial dark mode based on the current state of the document
+  useEffect(() => {
+    // Only run in the browser
+    if (typeof window !== 'undefined') {
+      // Check if dark mode is currently active
+      const isDark = document.documentElement.classList.contains('dark');
+      setIsDarkMode(isDark);
+      console.log('Initial dark mode state:', isDark);
+
+      // If user has settings, update the UI to match
+      if (user?.settings?.theme) {
+        const userPrefersDark = user.settings.theme === 'dark';
+        if (isDark !== userPrefersDark) {
+          // Update UI to match user settings
+          document.documentElement.classList.toggle('dark', userPrefersDark);
+          setIsDarkMode(userPrefersDark);
+          console.log('Updated dark mode to match user settings:', userPrefersDark);
+        }
+      }
+    }
+  }, [user]);
+
+  return (
+    <header className="bg-white dark:bg-gray-800 shadow-sm z-10">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{getPageTitle()}</h1>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            {/* Dark mode toggle */}
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <span className="sr-only">{isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}</span>
+              {isDarkMode ? (
+                <FaSun className="h-6 w-6" />
+              ) : (
+                <FaMoon className="h-6 w-6" />
+              )}
+            </button>
+
+            {/* Notifications */}
+            <button
+              type="button"
+              className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <span className="sr-only">View notifications</span>
+              <FaBell className="h-6 w-6" />
+            </button>
+
+            {/* Profile dropdown */}
+            {user && (
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  className="flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  id="user-menu-button"
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                >
+                  <span className="sr-only">Open user menu</span>
+                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                    {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
+                  </div>
+                </button>
+                {isProfileMenuOpen && (
+                  <div
+                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="user-menu-button"
+                  >
+                    <Link
+                      href="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      role="menuitem"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      <FaUser className="mr-2 h-4 w-4" />
+                      Your Profile
+                    </Link>
+                    {user.role === 'admin' && (
+                      <Link
+                        href="/settings"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        role="menuitem"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        <FaCog className="mr-2 h-4 w-4" />
+                        Settings
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-left"
+                      role="menuitem"
+                    >
+                      <FaSignOutAlt className="mr-2 h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
