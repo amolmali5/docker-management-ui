@@ -1,10 +1,20 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '../../utils/api';
-import { FaDocker, FaServer, FaMemory, FaNetworkWired, FaExclamationTriangle, FaDatabase } from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useRefresh } from '../../context/RefreshContext';
+import {
+  FaDocker, FaServer, FaMemory, FaNetworkWired, FaExclamationTriangle,
+  FaDatabase, FaSyncAlt, FaChartPie, FaBoxOpen, FaHdd, FaNetworkWired as FaNetwork,
+  FaThermometerHalf, FaCloudDownloadAlt, FaLayerGroup, FaInfoCircle
+} from 'react-icons/fa';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 import Link from 'next/link';
+import NavLink from '../components/NavLink';
+// We don't need to import PageLoading here as it's used in the layout
 
 interface ContainerSummary {
   Id: string;
@@ -41,29 +51,64 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+      // Only set loading state if we don't already have data
+      if (!systemInfo || containers.length === 0) {
+        setLoading(true);
+      }
+
+      // Use AbortController to cancel requests if they take too long
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const [containersResponse, systemInfoResponse] = await Promise.all([
-        api.get('/api/containers'),
-        api.get('/api/system/info')
+        api.get('/api/containers', { signal: controller.signal }),
+        api.get('/api/system/info', { signal: controller.signal })
       ]);
+
+      clearTimeout(timeoutId);
 
       setContainers(containersResponse.data);
       setSystemInfo(systemInfoResponse.data);
       setError('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching data:', err);
-      setError('Failed to fetch data. Make sure the backend server is running.');
+      // Don't show error for aborted requests
+      if (err.name !== 'AbortError') {
+        setError('Failed to fetch data. Make sure the backend server is running.');
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [containers.length, systemInfo]);
+
+  // Get the refresh interval from context
+  const { refreshInterval } = useRefresh();
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const isRefreshing = useRef(false);
 
   useEffect(() => {
+    // Initial data fetch
     fetchData();
-    // Set up polling every 10 seconds
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+
+    // Only set up auto-refresh if enabled and interval is reasonable
+    let interval: NodeJS.Timeout | null = null;
+
+    if (autoRefresh && refreshInterval && refreshInterval > 1000) {
+      interval = setInterval(() => {
+        // Prevent multiple simultaneous refreshes
+        if (!isRefreshing.current) {
+          isRefreshing.current = true;
+          fetchData().finally(() => {
+            isRefreshing.current = false;
+          });
+        }
+      }, refreshInterval);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [fetchData, refreshInterval, autoRefresh]);
 
   const containerStatusData = [
     { name: 'Running', value: systemInfo?.ContainersRunning || 0 },
@@ -81,7 +126,45 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {autoRefresh ? (
+              <span className="flex items-center">
+                <span className="inline-block h-2 w-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                Auto-refresh: {refreshInterval ? `${refreshInterval / 1000}s` : 'On'}
+              </span>
+            ) : (
+              <span>Auto-refresh: Off</span>
+            )}
+          </div>
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md
+              ${autoRefresh
+                ? 'text-green-700 bg-green-100 hover:bg-green-200 dark:text-green-200 dark:bg-green-900 dark:hover:bg-green-800'
+                : 'text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+            title={autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"}
+          >
+            <FaSyncAlt className={`${autoRefresh ? 'animate-spin-slow' : ''}`} />
+          </button>
+          <button
+            onClick={() => {
+              isRefreshing.current = true;
+              fetchData().finally(() => {
+                isRefreshing.current = false;
+              });
+            }}
+            disabled={loading}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            title="Manual refresh"
+          >
+            <FaSyncAlt className={`${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
@@ -92,9 +175,12 @@ export default function Home() {
         </div>
       )}
 
-      {loading ? (
+      {loading && !systemInfo ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="text-gray-500 dark:text-gray-400 text-center">
+            <p>Loading dashboard data...</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Please wait while we fetch the latest information</p>
+          </div>
         </div>
       ) : (
         <>
@@ -184,9 +270,9 @@ export default function Home() {
                   {containers.slice(0, 5).map((container) => (
                     <tr key={container.Id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`/containers/${container.Id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                        <NavLink href={`/containers/${container.Id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                           {container.Names[0].replace('/', '')}
-                        </Link>
+                        </NavLink>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-900 dark:text-gray-300">{container.Image}</span>
@@ -224,9 +310,12 @@ export default function Home() {
             </div>
             {containers.length > 5 && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <Link href="/containers" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  View all containers
-                </Link>
+                <NavLink href="/containers" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center">
+                  <span>View all containers</span>
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </NavLink>
               </div>
             )}
           </div>

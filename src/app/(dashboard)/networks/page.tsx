@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../utils/api';
-import { FaSearch, FaExclamationTriangle, FaPlus, FaTrash, FaInfoCircle } from 'react-icons/fa';
+import { FaSearch, FaExclamationTriangle, FaPlus, FaTrash, FaInfoCircle, FaSort, FaSortUp, FaSortDown, FaSyncAlt } from 'react-icons/fa';
 import InspectModal from '../../components/InspectModal';
 import CreateNetworkForm from '../../components/CreateNetworkForm';
 import { useAuth } from '../../context/AuthContext';
+import { useRefresh } from '../../context/RefreshContext';
 
 interface DockerNetwork {
   Id: string;
@@ -44,6 +45,16 @@ export default function NetworksPage() {
   const [inspectData, setInspectData] = useState<any>(null);
   const [inspectLoading, setInspectLoading] = useState(false);
 
+  // Sorting
+  type SortField = 'name' | 'id' | 'driver' | 'scope' | 'subnet' | 'containers';
+  type SortDirection = 'asc' | 'desc';
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Multi-select for batch operations
+  const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
+  const [batchActionInProgress, setBatchActionInProgress] = useState(false);
+
   // Check if user has write or admin access
   const hasWriteAccess = user && (user.role === 'write' || user.role === 'admin');
 
@@ -68,26 +79,89 @@ export default function NetworksPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchNetworks();
-    // Set up polling every 30 seconds
-    const interval = setInterval(fetchNetworks, 30000);
-    return () => clearInterval(interval);
-  }, [fetchNetworks]);
+  // Get the refresh interval from context
+  const { refreshInterval } = useRefresh();
 
   useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredNetworks(networks);
+    fetchNetworks();
+    // Set up polling using the user's refresh rate setting
+    const interval = setInterval(fetchNetworks, refreshInterval);
+    return () => clearInterval(interval);
+  }, [fetchNetworks, refreshInterval]); // Add refreshInterval as a dependency
+
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (field === sortField) {
+      // If clicking the same field, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      const filtered = networks.filter(
+      // If clicking a new field, set it as the sort field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Apply sorting to networks
+  const sortNetworks = (networks: DockerNetwork[]) => {
+    return [...networks].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case 'name':
+          comparison = a.Name.localeCompare(b.Name);
+          break;
+        case 'id':
+          comparison = a.Id.localeCompare(b.Id);
+          break;
+        case 'driver':
+          comparison = a.Driver.localeCompare(b.Driver);
+          break;
+        case 'scope':
+          comparison = a.Scope.localeCompare(b.Scope);
+          break;
+        case 'subnet':
+          // Sort by subnet (if available)
+          const subnetA = a.IPAM && a.IPAM.Config && a.IPAM.Config.length > 0 && a.IPAM.Config[0].Subnet
+            ? a.IPAM.Config[0].Subnet
+            : '';
+          const subnetB = b.IPAM && b.IPAM.Config && b.IPAM.Config.length > 0 && b.IPAM.Config[0].Subnet
+            ? b.IPAM.Config[0].Subnet
+            : '';
+          comparison = subnetA.localeCompare(subnetB);
+          break;
+        case 'containers':
+          // Sort by number of containers
+          const containersA = a.Containers ? Object.keys(a.Containers).length : 0;
+          const containersB = b.Containers ? Object.keys(b.Containers).length : 0;
+          comparison = containersA - containersB;
+          break;
+        default:
+          comparison = 0;
+      }
+
+      // Reverse the comparison if sorting in descending order
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  useEffect(() => {
+    let filtered = networks;
+
+    // Apply search filter
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter(
         network =>
           network.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           network.Driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
           network.Id.substring(0, 12).includes(searchTerm.toLowerCase())
       );
-      setFilteredNetworks(filtered);
     }
-  }, [searchTerm, networks]);
+
+    // Apply sorting
+    filtered = sortNetworks(filtered);
+
+    setFilteredNetworks(filtered);
+  }, [searchTerm, networks, sortField, sortDirection]);
 
   const getContainerCount = (network: DockerNetwork) => {
     return network.Containers ? Object.keys(network.Containers).length : 0;
@@ -128,19 +202,104 @@ export default function NetworksPage() {
     setInspectData(null);
   };
 
+  // Handle checkbox selection
+  const handleNetworkSelection = (networkId: string) => {
+    // Check if the network has containers attached
+    const network = networks.find(n => n.Id === networkId);
+    if (network && getContainerCount(network) > 0) {
+      // Don't allow selection of networks with containers
+      return;
+    }
+
+    setSelectedNetworks(prev => {
+      if (prev.includes(networkId)) {
+        return prev.filter(id => id !== networkId);
+      } else {
+        return [...prev, networkId];
+      }
+    });
+  };
+
+  // Handle "Select All" checkbox
+  const handleSelectAll = () => {
+    // Get all networks that don't have containers attached
+    const selectableNetworks = networks.filter(network => getContainerCount(network) === 0);
+    const selectableNetworkIds = selectableNetworks.map(network => network.Id);
+
+    // Check if all selectable networks are already selected
+    const allSelectableSelected = selectableNetworkIds.every(id =>
+      selectedNetworks.includes(id)
+    );
+
+    if (allSelectableSelected) {
+      // If all selectable are selected, unselect all
+      setSelectedNetworks([]);
+    } else {
+      // Otherwise, select all networks without containers
+      setSelectedNetworks(selectableNetworkIds);
+    }
+  };
+
+  // Handle batch delete
+  const handleBatchDelete = async () => {
+    if (selectedNetworks.length === 0) return;
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedNetworks.length} selected network(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setBatchActionInProgress(true);
+
+      // Delete networks one by one
+      for (const networkId of selectedNetworks) {
+        try {
+          await api.delete(`/api/networks/${networkId}`);
+        } catch (err) {
+          console.error(`Error deleting network ${networkId}:`, err);
+          setError(prev => prev + `\nFailed to delete network ${networkId}.`);
+        }
+      }
+
+      // Clear selection
+      setSelectedNetworks([]);
+
+      // Refresh the networks list
+      setTimeout(fetchNetworks, 1000);
+    } catch (err) {
+      console.error('Error in batch delete:', err);
+      setError(`Failed to complete batch delete operation. ${err}`);
+    } finally {
+      setBatchActionInProgress(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Networks</h1>
         <div className="flex items-center space-x-4">
           {user?.role === 'admin' || user?.role === 'write' ? (
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <FaPlus className="mr-2" />
-              Create Network
-            </button>
+            <>
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <FaPlus className="mr-2" />
+                Create Network
+              </button>
+
+              {selectedNetworks.length > 0 && (
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={batchActionInProgress}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                >
+                  <FaTrash className="mr-2" />
+                  Delete Selected ({selectedNetworks.length})
+                </button>
+              )}
+            </>
           ) : (
             <div className="text-sm text-gray-500 dark:text-gray-400">
               You need write or admin access to create networks.
@@ -158,6 +317,14 @@ export default function NetworksPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <button
+            onClick={fetchNetworks}
+            disabled={loading}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            title="Refresh networks"
+          >
+            <FaSyncAlt className={`${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
@@ -192,18 +359,122 @@ export default function NetworksPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Driver</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Scope</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subnet</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Containers</th>
+                  {hasWriteAccess && (
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" style={{ width: '5%' }}>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        checked={
+                          selectedNetworks.length > 0 &&
+                          networks.filter(n => getContainerCount(n) === 0).every(n => selectedNetworks.includes(n.Id))
+                        }
+                        onChange={handleSelectAll}
+                        title="Select all networks without containers"
+                      />
+                    </th>
+                  )}
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center">
+                      <span>Name</span>
+                      {sortField === 'name' ? (
+                        sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />
+                      ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center">
+                      <span>ID</span>
+                      {sortField === 'id' ? (
+                        sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />
+                      ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('driver')}
+                  >
+                    <div className="flex items-center">
+                      <span>Driver</span>
+                      {sortField === 'driver' ? (
+                        sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />
+                      ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('scope')}
+                  >
+                    <div className="flex items-center">
+                      <span>Scope</span>
+                      {sortField === 'scope' ? (
+                        sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />
+                      ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('subnet')}
+                  >
+                    <div className="flex items-center">
+                      <span>Subnet</span>
+                      {sortField === 'subnet' ? (
+                        sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />
+                      ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('containers')}
+                  >
+                    <div className="flex items-center">
+                      <span>Containers</span>
+                      {sortField === 'containers' ? (
+                        sortDirection === 'asc' ? <FaSortUp className="ml-1" /> : <FaSortDown className="ml-1" />
+                      ) : (
+                        <FaSort className="ml-1 text-gray-400" />
+                      )}
+                    </div>
+                  </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredNetworks.map((network) => (
                   <tr key={network.Id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    {hasWriteAccess && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                          checked={selectedNetworks.includes(network.Id)}
+                          onChange={() => handleNetworkSelection(network.Id)}
+                          disabled={getContainerCount(network) > 0}
+                          title={getContainerCount(network) > 0 ? "Cannot delete network with connected containers" : "Select network for deletion"}
+                        />
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-300">
                       {network.Name}
                     </td>
@@ -252,7 +523,7 @@ export default function NetworksPage() {
                 ))}
                 {filteredNetworks.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={hasWriteAccess ? 8 : 7} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                       {searchTerm ? 'No networks match your search' : 'No networks found'}
                     </td>
                   </tr>

@@ -5,6 +5,9 @@ import "./dark-mode.css";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import { AuthProvider } from "./context/AuthContext";
+import { RefreshProvider } from "./context/RefreshContext";
+import { NavigationProvider } from "./context/NavigationContext";
+import LoadingIndicator from "./components/LoadingIndicator";
 import image from "../../public/image-original.png"
 
 const geistSans = Geist({
@@ -37,7 +40,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900`}
       >
         <AuthProvider>
-          {children}
+          <RefreshProvider>
+            <NavigationProvider>
+              <LoadingIndicator />
+              {children}
+            </NavigationProvider>
+          </RefreshProvider>
         </AuthProvider>
       </body>
     </html>

@@ -186,7 +186,7 @@ export default function ContainerTerminal({ containerId }: ContainerTerminalProp
       setTimeout(() => {
         try {
           if (newFitAddon && terminalRef.current &&
-              terminalRef.current.offsetWidth > 0 && terminalRef.current.offsetHeight > 0) {
+            terminalRef.current.offsetWidth > 0 && terminalRef.current.offsetHeight > 0) {
             console.log('Fitting terminal to container');
             newFitAddon.fit();
             // Focus after fitting
@@ -218,7 +218,7 @@ export default function ContainerTerminal({ containerId }: ContainerTerminalProp
     const handleResize = () => {
       try {
         if (terminalRef.current &&
-            terminalRef.current.offsetWidth > 0 && terminalRef.current.offsetHeight > 0) {
+          terminalRef.current.offsetWidth > 0 && terminalRef.current.offsetHeight > 0) {
           fitAddon.fit();
         }
       } catch (error) {

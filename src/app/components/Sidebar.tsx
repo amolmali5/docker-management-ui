@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import NavLink from './NavLink';
 import {
   FaDocker,
   FaServer,
@@ -78,69 +79,59 @@ export default function Sidebar() {
           <nav className="flex-1 px-2 py-4 overflow-y-auto">
             <ul className="space-y-2">
               <li>
-                <Link
+                <NavLink
                   href="/dashboard"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/dashboard')
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                   onClick={closeMobileMenu}
                 >
                   <FaChartLine className="mr-3 h-5 w-5" />
                   Dashboard
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   href="/containers"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/containers')
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                   onClick={closeMobileMenu}
                 >
                   <FaServer className="mr-3 h-5 w-5" />
                   Containers
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   href="/images"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/images')
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                   onClick={closeMobileMenu}
                 >
                   <FaImage className="mr-3 h-5 w-5" />
                   Images
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   href="/networks"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/networks')
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                   onClick={closeMobileMenu}
                 >
                   <FaNetworkWired className="mr-3 h-5 w-5" />
                   Networks
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link
+                <NavLink
                   href="/volumes"
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/volumes')
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                   onClick={closeMobileMenu}
                 >
                   <FaDatabase className="mr-3 h-5 w-5" />
                   Volumes
-                </Link>
+                </NavLink>
               </li>
             </ul>
 
@@ -150,45 +141,39 @@ export default function Sidebar() {
               </h3>
               <ul className="mt-2 space-y-2">
                 <li>
-                  <Link
+                  <NavLink
                     href="/profile"
-                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/profile')
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                      }`}
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                     onClick={closeMobileMenu}
                   >
                     <FaUser className="mr-3 h-5 w-5" />
                     Profile
-                  </Link>
+                  </NavLink>
                 </li>
                 {user?.role === 'admin' && (
                   <>
                     <li>
-                      <Link
+                      <NavLink
                         href="/users"
-                        className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/users')
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                          }`}
+                        className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                         onClick={closeMobileMenu}
                       >
                         <FaUsers className="mr-3 h-5 w-5" />
                         Users
-                      </Link>
+                      </NavLink>
                     </li>
                     <li>
-                      <Link
+                      <NavLink
                         href="/settings"
-                        className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isActive('/settings')
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                          }`}
+                        className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
                         onClick={closeMobileMenu}
                       >
                         <FaCog className="mr-3 h-5 w-5" />
                         Settings
-                      </Link>
+                      </NavLink>
                     </li>
                   </>
                 )}

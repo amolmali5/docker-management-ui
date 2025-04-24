@@ -12,6 +12,7 @@ const { initializeDb } = require('./db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
+const volumesRoutes = require('./routes/volumes');
 
 // Import middleware
 const { auth, adminAuth, writeAuth } = require('./middleware/auth');
@@ -70,6 +71,7 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/volumes', volumesRoutes);
 
 // Docker API Routes
 // Get all containers
@@ -158,16 +160,47 @@ app.get('/api/containers/:id/stats', (req, res) => {
 });
 
 // Start container
-app.post('/api/containers/:id/start', writeAuth, (req, res) => {
+app.post('/api/containers/:id/start', writeAuth, async (req, res) => {
   const container = docker.getContainer(req.params.id);
-  container.start()
-    .then(() => {
+
+  try {
+    // First check if the container is paused
+    const info = await container.inspect();
+
+    if (info.State.Paused) {
+      // If container is paused, unpause it instead of starting it
+      await container.unpause();
+      res.json({ success: true, message: 'Container unpaused successfully' });
+    } else {
+      // Otherwise, start the container normally
+      await container.start();
       res.json({ success: true });
-    })
-    .catch(error => {
-      console.error(`Error starting container ${req.params.id}:`, error);
-      res.status(500).json({ error: `Failed to start container ${req.params.id}` });
-    });
+    }
+  } catch (error) {
+    console.error(`Error starting/unpausing container ${req.params.id}:`, error);
+
+    // Check if this is the specific "cannot start a paused container" error
+    if (error.statusCode === 409 && error.json && error.json.message &&
+      error.json.message.includes('cannot start a paused container')) {
+      // Try to unpause the container as a fallback
+      try {
+        await container.unpause();
+        res.json({ success: true, message: 'Container unpaused successfully' });
+      } catch (unpauseError) {
+        console.error(`Error unpausing container ${req.params.id}:`, unpauseError);
+        res.status(500).json({
+          error: `Failed to start/unpause container ${req.params.id}`,
+          details: unpauseError.json?.message || unpauseError.message || 'Unknown error'
+        });
+      }
+    } else {
+      // For other errors, return the error message
+      res.status(500).json({
+        error: `Failed to start container ${req.params.id}`,
+        details: error.json?.message || error.message || 'Unknown error'
+      });
+    }
+  }
 });
 
 // Stop container
@@ -212,6 +245,82 @@ app.post('/api/containers/:id/restart', writeAuth, (req, res) => {
       console.error(`Error restarting container ${req.params.id}:`, error);
       res.status(500).json({ error: `Failed to restart container ${req.params.id}` });
     });
+});
+
+// Unpause container
+app.post('/api/containers/:id/unpause', writeAuth, async (req, res) => {
+  const container = docker.getContainer(req.params.id);
+
+  try {
+    // First check if the container exists and is in a valid state
+    const info = await container.inspect();
+
+    // Check if container is running (can't unpause a stopped container)
+    if (!info.State.Running) {
+      return res.status(400).json({
+        error: `Cannot unpause container ${req.params.id} because it is not running`,
+        details: 'Container must be in running state to be unpaused'
+      });
+    }
+
+    // Check if container is actually paused
+    if (!info.State.Paused) {
+      return res.status(400).json({
+        error: `Container ${req.params.id} is not paused`,
+        details: 'Container must be in paused state to be unpaused'
+      });
+    }
+
+    // Unpause the container
+    await container.unpause();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Error unpausing container ${req.params.id}:`, error);
+
+    // Ensure we always return JSON, not HTML
+    res.status(500).json({
+      error: `Failed to unpause container ${req.params.id}`,
+      details: error.json?.message || error.message || 'Unknown error'
+    });
+  }
+});
+
+// Pause container
+app.post('/api/containers/:id/pause', writeAuth, async (req, res) => {
+  const container = docker.getContainer(req.params.id);
+
+  try {
+    // First check if the container exists and is in a valid state
+    const info = await container.inspect();
+
+    // Check if container is running (can't pause a stopped container)
+    if (!info.State.Running) {
+      return res.status(400).json({
+        error: `Cannot pause container ${req.params.id} because it is not running`,
+        details: 'Container must be in running state to be paused'
+      });
+    }
+
+    // Check if container is already paused
+    if (info.State.Paused) {
+      return res.status(400).json({
+        error: `Container ${req.params.id} is already paused`,
+        details: 'Container is already in paused state'
+      });
+    }
+
+    // Pause the container
+    await container.pause();
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Error pausing container ${req.params.id}:`, error);
+
+    // Ensure we always return JSON, not HTML
+    res.status(500).json({
+      error: `Failed to pause container ${req.params.id}`,
+      details: error.json?.message || error.message || 'Unknown error'
+    });
+  }
 });
 
 // Execute command in container
@@ -518,78 +627,7 @@ app.delete('/api/networks/:id', writeAuth, (req, res) => {
     });
 });
 
-// Get all volumes
-app.get('/api/volumes', (req, res) => {
-  docker.listVolumes()
-    .then(volumes => {
-      res.json(volumes);
-    })
-    .catch(error => {
-      console.error('Error fetching volumes:', error);
-      res.status(500).json({ error: 'Failed to fetch volumes' });
-    });
-});
-
-// Get volume details
-app.get('/api/volumes/:name', (req, res) => {
-  const volume = docker.getVolume(req.params.name);
-  volume.inspect()
-    .then(info => {
-      res.json(info);
-    })
-    .catch(error => {
-      console.error(`Error fetching volume ${req.params.name}:`, error);
-      res.status(500).json({
-        error: `Failed to fetch volume ${req.params.name}`,
-        details: error.message || 'Unknown error'
-      });
-    });
-});
-
-// Create a volume
-app.post('/api/volumes', writeAuth, (req, res) => {
-  const { name, driver, driverOpts, labels } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: 'Volume name is required' });
-  }
-
-  const options = {
-    Name: name,
-    Driver: driver || 'local',
-    DriverOpts: driverOpts || {},
-    Labels: labels || {}
-  };
-
-  docker.createVolume(options)
-    .then(volume => {
-      res.status(201).json(volume);
-    })
-    .catch(error => {
-      console.error('Error creating volume:', error);
-      res.status(500).json({
-        error: 'Failed to create volume',
-        details: error.json?.message || error.message || 'Unknown error'
-      });
-    });
-});
-
-// Delete a volume
-app.delete('/api/volumes/:name', writeAuth, (req, res) => {
-  const volume = docker.getVolume(req.params.name);
-
-  volume.remove()
-    .then(() => {
-      res.json({ success: true, message: `Volume ${req.params.name} deleted successfully` });
-    })
-    .catch(error => {
-      console.error(`Error deleting volume ${req.params.name}:`, error);
-      res.status(500).json({
-        error: `Failed to delete volume ${req.params.name}`,
-        details: error.json?.message || error.message || 'Unknown error'
-      });
-    });
-});
+// Volume routes are now handled by volumesRoutes
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

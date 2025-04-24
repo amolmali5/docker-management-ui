@@ -1,6 +1,7 @@
 # Docker Management UI
 
-A web-based Docker container management application similar to Portainer. This application allows you to monitor and manage Docker containers, view logs, change environment variables, and restart containers.
+A web-based Docker container management application similar to Portainer. This application allows you to monitor and manage Docker containers, view logs, access interactive terminals, manage environment variables, and restart containers.
+
 
 ## Technologies Used
 
@@ -29,11 +30,12 @@ A web-based Docker container management application similar to Portainer. This a
 ## Features
 
 - Dashboard with system overview and container status
-- Container management (start, stop, restart)
-- Container logs viewer
+- Container management (start, stop, restart, pause)
+- Container logs viewer with auto-refresh
+- Interactive terminal for containers
 - Environment variable management
-- Docker image listing
-- System information
+- Docker image listing and management
+- System information dashboard
 - User authentication with role-based access control (admin, write, read)
 - User management with ability to create and manage users
 - User profile management

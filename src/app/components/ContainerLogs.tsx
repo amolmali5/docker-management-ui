@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/app/utils/api';
 import { FaSync, FaExclamationTriangle } from 'react-icons/fa';
+import { useNavigation } from '../context/NavigationContext';
 
 interface ContainerLogsProps {
   containerId: string;
@@ -10,14 +11,20 @@ interface ContainerLogsProps {
 
 export default function ContainerLogs({ containerId }: ContainerLogsProps) {
   const [logs, setLogs] = useState<string>('');
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [loading, setLoading] = useState(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Use the navigation context for section-specific loading
+  const { startNavigation, endNavigation } = useNavigation();
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
+      // Start navigation loading for the "containers" section
+      startNavigation('containers');
+
       const response = await api.get(`/api/containers/${containerId}/logs`);
       setLogs(response.data);
       setError('');
@@ -26,6 +33,8 @@ export default function ContainerLogs({ containerId }: ContainerLogsProps) {
       setError('Failed to fetch container logs. Make sure the backend server is running.');
     } finally {
       setLoading(false);
+      // End navigation loading
+      endNavigation();
     }
   };
 
