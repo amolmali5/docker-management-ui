@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../utils/api';
-import { FaSearch, FaExclamationTriangle, FaUserPlus, FaEdit, FaTrash, FaUserShield } from 'react-icons/fa';
+import { FaSearch, FaExclamationTriangle, FaUserPlus, FaEdit, FaTrash, FaUserShield, FaServer } from 'react-icons/fa';
 import CreateUserForm from '../../components/CreateUserForm';
+import EditUserServerAccess from '../../components/EditUserServerAccess';
 import { useAuth } from '../../context/AuthContext';
 
 interface User {
@@ -12,6 +13,10 @@ interface User {
   email: string;
   role: string;
   createdAt: string;
+  serverAccess?: {
+    type: 'all' | 'specific' | 'none';
+    serverIds?: string[];
+  };
 }
 
 export default function UsersPage() {
@@ -22,6 +27,8 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showServerAccessForm, setShowServerAccessForm] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
   const fetchUsers = useCallback(async () => {
@@ -78,6 +85,11 @@ export default function UsersPage() {
     }
   };
 
+  const editServerAccess = (userId: number) => {
+    setSelectedUserId(userId);
+    setShowServerAccessForm(true);
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -95,6 +107,21 @@ export default function UsersPage() {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleString();
+  };
+
+  const getServerAccessText = (user: User) => {
+    const serverAccess = user.serverAccess || { type: 'all' };
+
+    if (serverAccess.type === 'all') {
+      return 'All Servers';
+    } else if (serverAccess.type === 'none') {
+      return 'No Servers';
+    } else if (serverAccess.type === 'specific') {
+      const count = serverAccess.serverIds?.length || 0;
+      return count === 1 ? '1 Server' : `${count} Servers`;
+    }
+
+    return 'Unknown';
   };
 
   return (
@@ -135,6 +162,24 @@ export default function UsersPage() {
               fetchUsers(); // Refresh the users list
             }}
             onCancel={() => setShowCreateForm(false)}
+          />
+        </div>
+      )}
+
+      {showServerAccessForm && selectedUserId && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <EditUserServerAccess
+            userId={selectedUserId}
+            onSuccess={() => {
+              setShowServerAccessForm(false);
+              setSelectedUserId(null);
+              setMessage('Server access updated successfully');
+              fetchUsers(); // Refresh the users list
+            }}
+            onCancel={() => {
+              setShowServerAccessForm(false);
+              setSelectedUserId(null);
+            }}
           />
         </div>
       )}
@@ -181,6 +226,7 @@ export default function UsersPage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Username</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Server Access</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created At</th>
                   {currentUser?.role === 'admin' && (
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -209,16 +255,33 @@ export default function UsersPage() {
                         {user.role}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <FaServer className="mr-2 text-gray-500 dark:text-gray-400" />
+                        <span className="text-sm text-gray-900 dark:text-gray-300">
+                          {getServerAccessText(user)}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(user.createdAt)}
                     </td>
                     {currentUser?.role === 'admin' && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-3">
+                          <button
+                            onClick={() => editServerAccess(user.id)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            title="Edit Server Access"
+                          >
+                            <FaServer />
+                          </button>
+
                           {user.id !== currentUser.id && (
                             <button
                               onClick={() => deleteUser(user.id)}
                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              title="Delete User"
                             >
                               <FaTrash />
                             </button>
@@ -230,7 +293,7 @@ export default function UsersPage() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={currentUser?.role === 'admin' ? 5 : 4} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={currentUser?.role === 'admin' ? 6 : 5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                       {searchTerm ? 'No users match your search' : 'No users found'}
                     </td>
                   </tr>

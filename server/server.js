@@ -13,9 +13,11 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const settingsRoutes = require('./routes/settings');
 const volumesRoutes = require('./routes/volumes');
+const serversRoutes = require('./routes/servers');
 
 // Import middleware
 const { auth, adminAuth, writeAuth } = require('./middleware/auth');
+const remoteDocker = require('./middleware/remote-docker');
 
 // Initialize Docker client
 const docker = new Dockerode();
@@ -42,14 +44,14 @@ initializeDb().catch(err => {
 app.use(cors({
   origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'X-Server-ID'],
   credentials: true
 }));
 
 // Add headers to all responses
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-auth-token, X-Server-ID');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Credentials', 'true');
   next();
@@ -72,11 +74,20 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/volumes', volumesRoutes);
+app.use('/api/servers', serversRoutes);
 
 // Docker API Routes
+// Apply remote Docker middleware to all Docker API routes
+// Note: Don't apply to /api/volumes since volumesRoutes already includes the middleware
+app.use('/api/containers', remoteDocker);
+app.use('/api/images', remoteDocker);
+app.use('/api/networks', remoteDocker);
+app.use('/api/system', remoteDocker);
+
 // Get all containers
 app.get('/api/containers', (req, res) => {
-  docker.listContainers({ all: true })
+  // Use req.docker instead of docker to support remote servers
+  req.docker.listContainers({ all: true })
     .then(containers => {
       res.json(containers);
     })
@@ -88,7 +99,7 @@ app.get('/api/containers', (req, res) => {
 
 // Get container details
 app.get('/api/containers/:id', (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
   container.inspect()
     .then(info => {
       res.json(info);
@@ -115,7 +126,7 @@ app.get('/api/containers/:id', (req, res) => {
 
 // Get container logs
 app.get('/api/containers/:id/logs', (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
 
   // First check if the container exists
   container.inspect()
@@ -148,7 +159,7 @@ app.get('/api/containers/:id/logs', (req, res) => {
 
 // Get container stats
 app.get('/api/containers/:id/stats', (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
   container.stats({ stream: false })
     .then(stats => {
       res.json(stats);
@@ -161,7 +172,7 @@ app.get('/api/containers/:id/stats', (req, res) => {
 
 // Start container
 app.post('/api/containers/:id/start', writeAuth, async (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
 
   try {
     // First check if the container is paused
@@ -205,7 +216,7 @@ app.post('/api/containers/:id/start', writeAuth, async (req, res) => {
 
 // Stop container
 app.post('/api/containers/:id/stop', writeAuth, (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
   container.stop()
     .then(() => {
       res.json({ success: true });
@@ -218,7 +229,7 @@ app.post('/api/containers/:id/stop', writeAuth, (req, res) => {
 
 // Delete container
 app.delete('/api/containers/:id', writeAuth, (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
   const force = req.query.force === 'true';
 
   container.remove({ force: force })
@@ -236,7 +247,7 @@ app.delete('/api/containers/:id', writeAuth, (req, res) => {
 
 // Restart container
 app.post('/api/containers/:id/restart', writeAuth, (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
   container.restart()
     .then(() => {
       res.json({ success: true });
@@ -249,7 +260,7 @@ app.post('/api/containers/:id/restart', writeAuth, (req, res) => {
 
 // Unpause container
 app.post('/api/containers/:id/unpause', writeAuth, async (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
 
   try {
     // First check if the container exists and is in a valid state
@@ -287,7 +298,7 @@ app.post('/api/containers/:id/unpause', writeAuth, async (req, res) => {
 
 // Pause container
 app.post('/api/containers/:id/pause', writeAuth, async (req, res) => {
-  const container = docker.getContainer(req.params.id);
+  const container = req.docker.getContainer(req.params.id);
 
   try {
     // First check if the container exists and is in a valid state
@@ -332,7 +343,7 @@ app.post('/api/containers/:id/exec', writeAuth, (req, res) => {
     return res.status(400).json({ error: 'Invalid command format. Expected non-empty array.' });
   }
 
-  const container = docker.getContainer(id);
+  const container = req.docker.getContainer(id);
 
   // Check if container is running
   container.inspect()
@@ -394,7 +405,7 @@ app.post('/api/containers/:id/update-env', writeAuth, (req, res) => {
   }
 
   // Get the current container
-  const container = docker.getContainer(id);
+  const container = req.docker.getContainer(id);
 
   container.inspect()
     .then(containerInfo => {
@@ -428,7 +439,7 @@ app.post('/api/containers/:id/update-env', writeAuth, (req, res) => {
             }
           };
 
-          return docker.createContainer(containerConfig);
+          return req.docker.createContainer(containerConfig);
         })
         .then(newContainer => {
           // Start the new container
@@ -454,7 +465,7 @@ app.post('/api/containers/:id/update-env', writeAuth, (req, res) => {
 
 // Get all images
 app.get('/api/images', (req, res) => {
-  docker.listImages()
+  req.docker.listImages()
     .then(images => {
       res.json(images);
     })
@@ -466,7 +477,7 @@ app.get('/api/images', (req, res) => {
 
 // Get image details
 app.get('/api/images/:id', (req, res) => {
-  const image = docker.getImage(req.params.id);
+  const image = req.docker.getImage(req.params.id);
   image.inspect()
     .then(info => {
       res.json(info);
@@ -482,7 +493,7 @@ app.get('/api/images/:id', (req, res) => {
 
 // Delete an image
 app.delete('/api/images/:id', writeAuth, (req, res) => {
-  const image = docker.getImage(req.params.id);
+  const image = req.docker.getImage(req.params.id);
   const force = req.query.force === 'true';
   const noprune = req.query.noprune === 'true';
 
@@ -501,7 +512,7 @@ app.delete('/api/images/:id', writeAuth, (req, res) => {
 
 // Get Docker system info
 app.get('/api/system/info', (req, res) => {
-  docker.info()
+  req.docker.info()
     .then(info => {
       res.json(info);
     })
@@ -513,7 +524,7 @@ app.get('/api/system/info', (req, res) => {
 
 // Get Docker version
 app.get('/api/system/version', (req, res) => {
-  docker.version()
+  req.docker.version()
     .then(version => {
       res.json(version);
     })
@@ -525,14 +536,14 @@ app.get('/api/system/version', (req, res) => {
 
 // Get all networks
 app.get('/api/networks', (req, res) => {
-  docker.listNetworks()
+  req.docker.listNetworks()
     .then(async networks => {
       try {
         // Get detailed information for each network
         const detailedNetworks = await Promise.all(
           networks.map(async network => {
             try {
-              const networkObj = docker.getNetwork(network.Id);
+              const networkObj = req.docker.getNetwork(network.Id);
               const inspectInfo = await networkObj.inspect();
               return inspectInfo;
             } catch (inspectError) {
@@ -555,7 +566,7 @@ app.get('/api/networks', (req, res) => {
 
 // Get network details
 app.get('/api/networks/:id', (req, res) => {
-  const network = docker.getNetwork(req.params.id);
+  const network = req.docker.getNetwork(req.params.id);
   network.inspect()
     .then(info => {
       res.json(info);
@@ -597,7 +608,7 @@ app.post('/api/networks', writeAuth, (req, res) => {
     options.IPAM.Config.push(ipamConfig);
   }
 
-  docker.createNetwork(options)
+  req.docker.createNetwork(options)
     .then(network => {
       res.status(201).json(network);
     })
@@ -612,7 +623,7 @@ app.post('/api/networks', writeAuth, (req, res) => {
 
 // Delete a network
 app.delete('/api/networks/:id', writeAuth, (req, res) => {
-  const network = docker.getNetwork(req.params.id);
+  const network = req.docker.getNetwork(req.params.id);
 
   network.remove()
     .then(() => {

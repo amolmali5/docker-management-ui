@@ -7,6 +7,7 @@ import Header from "./components/Header";
 import { AuthProvider } from "./context/AuthContext";
 import { RefreshProvider } from "./context/RefreshContext";
 import { NavigationProvider } from "./context/NavigationContext";
+import { ServerProvider } from "./context/ServerContext";
 import LoadingIndicator from "./components/LoadingIndicator";
 import image from "../../public/image-original.png"
 
@@ -42,8 +43,10 @@ export default function RootLayout({
         <AuthProvider>
           <RefreshProvider>
             <NavigationProvider>
-              <LoadingIndicator />
-              {children}
+              <ServerProvider>
+                <LoadingIndicator />
+                {children}
+              </ServerProvider>
             </NavigationProvider>
           </RefreshProvider>
         </AuthProvider>

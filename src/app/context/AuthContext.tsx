@@ -14,6 +14,10 @@ interface User {
     theme: string;
     refreshRate: number;
   };
+  serverAccess?: {
+    type: 'all' | 'specific' | 'none';
+    serverIds?: string[];
+  };
 }
 
 interface AuthContextType {
@@ -42,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Check if we have a token in localStorage
         const token = localStorage.getItem('token');
         if (!token) {
+          console.log('No token found in localStorage, user is not authenticated');
           // No token, so we're not authenticated
           setUser(null);
           setIsAuthenticated(false);
@@ -49,23 +54,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        console.log('Token found in localStorage, attempting to load user data');
+        console.log('Token starts with:', token.substring(0, 10) + '...');
+
         // Try to get user data
         const res = await api.get('/api/auth/user');
         if (res.status === 200) {
+          console.log('User data loaded successfully:', res.data);
           setUser(res.data);
           setIsAuthenticated(true);
         } else {
+          console.error('Invalid response when loading user:', res);
           // Invalid response, clear auth state
           setUser(null);
           setIsAuthenticated(false);
           localStorage.removeItem('token');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load user:', err);
+
+        // Log more detailed error information
+        if (err.response) {
+          console.error('Error response:', {
+            status: err.response.status,
+            data: err.response.data,
+            headers: err.response.headers
+          });
+        }
+
         setUser(null);
         setIsAuthenticated(false);
+
         // Clear any stored tokens
         if (typeof window !== 'undefined') {
+          console.log('Clearing authentication data due to error');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
@@ -95,7 +117,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Store token in localStorage
       if (res.data.token && typeof window !== 'undefined') {
+        // Clear any existing token first
+        localStorage.removeItem('token');
+
+        // Store the new token
         localStorage.setItem('token', res.data.token);
+
+        // Log token storage (don't show the full token)
+        console.log('Token stored in localStorage. Token starts with:',
+          res.data.token.substring(0, 10) + '...');
+      } else {
+        console.error('No token received from server or window is undefined');
       }
 
       setUser(res.data.user);

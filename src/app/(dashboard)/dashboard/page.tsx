@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import api from '../../utils/api';
-import { FaDocker, FaServer, FaMemory, FaNetworkWired, FaExclamationTriangle, FaDatabase } from 'react-icons/fa';
+import { useServer } from '../../context/ServerContext';
+import { useRefresh } from '../../context/RefreshContext';
+import {
+  FaDocker, FaServer, FaMemory, FaNetworkWired, FaExclamationTriangle
+} from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import Link from 'next/link';
 
 interface ContainerSummary {
   Id: string;
@@ -38,32 +41,193 @@ export default function Dashboard() {
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isBackgroundRefresh, setIsBackgroundRefresh] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  // Get server context to track server changes
+  const { currentServer } = useServer();
+
+  // Get the refresh interval from context
+  const { refreshInterval } = useRefresh();
+
+  // Ref to store previous data for comparison
+  const prevDataRef = useRef<{ containers: ContainerSummary[], systemInfo: SystemInfo | null }>({
+    containers: [],
+    systemInfo: null
+  });
+
+  // Helper function to check if data has changed
+  const isDataChanged = (
+    prevContainers: ContainerSummary[],
+    newContainers: ContainerSummary[],
+    prevSystemInfo: SystemInfo | null,
+    newSystemInfo: SystemInfo | null
+  ): boolean => {
+    // Quick check: different container length means they've changed
+    if (prevContainers.length !== newContainers.length) {
+      return true;
+    }
+
+    // Check if system info has changed
+    if (prevSystemInfo === null && newSystemInfo !== null) {
+      return true;
+    }
+
+    if (prevSystemInfo !== null && newSystemInfo !== null) {
+      // Check if any important system info fields have changed
+      if (
+        prevSystemInfo.Containers !== newSystemInfo.Containers ||
+        prevSystemInfo.ContainersRunning !== newSystemInfo.ContainersRunning ||
+        prevSystemInfo.ContainersPaused !== newSystemInfo.ContainersPaused ||
+        prevSystemInfo.ContainersStopped !== newSystemInfo.ContainersStopped ||
+        prevSystemInfo.Images !== newSystemInfo.Images
+      ) {
+        return true;
+      }
+    }
+
+    // Create a map of container IDs to their states and statuses for quick lookup
+    const prevContainerMap = new Map<string, { state: string, status: string }>();
+    prevContainers.forEach(container => {
+      prevContainerMap.set(container.Id, {
+        state: container.State,
+        status: container.Status
+      });
+    });
+
+    // Check if any container's state or status has changed
+    for (const container of newContainers) {
+      const prevContainer = prevContainerMap.get(container.Id);
+
+      // If container doesn't exist in previous list or state/status changed
+      if (!prevContainer ||
+        prevContainer.state !== container.State ||
+        // Only consider status changes that affect the container state
+        (prevContainer.status !== container.Status &&
+          (container.Status.includes('Up') !== prevContainer.status.includes('Up') ||
+            container.Status.includes('Paused') !== prevContainer.status.includes('Paused') ||
+            container.Status.includes('Exited') !== prevContainer.status.includes('Exited')))
+      ) {
+        return true;
+      }
+    }
+
+    // No changes detected
+    return false;
+  };
+
+  const fetchData = useCallback(async (isBackgroundRefresh = false) => {
+    console.log("fetchData called", isBackgroundRefresh ? "(background refresh)" : "");
+
+    // Set background refresh state for UI
+    setIsBackgroundRefresh(isBackgroundRefresh);
+
     try {
-      setLoading(true);
+      // Only set loading state for non-background refreshes and if we don't already have data
+      if (!isBackgroundRefresh && (!systemInfo || containers.length === 0)) {
+        console.log("Setting loading state to true");
+        setLoading(true);
+      }
+
+      // Use AbortController to cancel requests if they take too long
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log("Request timeout reached, aborting");
+        controller.abort();
+      }, 5000); // 5 second timeout
+
+      console.log("Making API requests", currentServer ? `for server: ${currentServer.name}` : "for default server");
+
+      // Include the server ID in the API requests if available
+      const serverParam = currentServer ? `?serverId=${currentServer.id}` : '';
+
       const [containersResponse, systemInfoResponse] = await Promise.all([
-        api.get('/api/containers'),
-        api.get('/api/system/info')
+        api.get(`/api/containers${serverParam}`, { signal: controller.signal }),
+        api.get(`/api/system/info${serverParam}`, { signal: controller.signal })
       ]);
 
-      setContainers(containersResponse.data);
-      setSystemInfo(systemInfoResponse.data);
-      setError('');
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to fetch data. Make sure the backend server is running.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      clearTimeout(timeoutId);
+      console.log("API requests completed successfully");
 
+      const newContainers = containersResponse.data;
+      const newSystemInfo = systemInfoResponse.data;
+
+      // Check if the data has actually changed
+      const dataChanged = isDataChanged(
+        prevDataRef.current.containers,
+        newContainers,
+        prevDataRef.current.systemInfo,
+        newSystemInfo
+      );
+
+      // Only update state if this is not a background refresh or if the data has actually changed
+      if (!isBackgroundRefresh || dataChanged) {
+        console.log("Data changed or not a background refresh, updating state");
+        setContainers(newContainers);
+        setSystemInfo(newSystemInfo);
+      } else {
+        console.log("No data changes detected during background refresh, skipping update");
+      }
+
+      // Update the reference to the current data
+      prevDataRef.current = {
+        containers: newContainers,
+        systemInfo: newSystemInfo
+      };
+
+      setError('');
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+
+      // Don't show error for aborted requests
+      if (err.name !== 'AbortError') {
+        setError('Failed to fetch data. Make sure the backend server is running.');
+      } else {
+        console.log("Request was aborted");
+      }
+    } finally {
+      // Only clear loading state for non-background refreshes
+      if (!isBackgroundRefresh) {
+        console.log("Setting loading state to false");
+        setLoading(false);
+      }
+      setIsBackgroundRefresh(false);
+    }
+  }, [currentServer, containers.length, systemInfo]);  // Include currentServer and data state in dependencies
+
+  // Track server changes
+  const prevServerRef = useRef<any>(null);
+
+  // Effect for initial data loading and setting up auto-refresh
   useEffect(() => {
-    fetchData();
-    // Set up polling every 10 seconds
-    const interval = setInterval(fetchData, 10000);
+    console.log("Initial data loading effect");
+
+    // Check if server has changed
+    const isServerChanged = prevServerRef.current !== null &&
+      prevServerRef.current !== currentServer;
+
+    if (isServerChanged) {
+      console.log("Server changed, setting loading state to true");
+      setLoading(true);
+    }
+
+    // Update the previous server reference
+    prevServerRef.current = currentServer;
+
+    // Initial fetch - show loading indicator
+    // If server changed, this is not a background refresh
+    fetchData(false);
+
+    // Set up polling with background refresh using the user's refresh rate setting
+    const interval = setInterval(() => {
+      console.log("Auto-refresh triggered");
+      fetchData(true); // This is a background refresh
+    }, refreshInterval);
+
+    // Clean up interval on unmount
     return () => clearInterval(interval);
-  }, [fetchData]);
+
+    // Include currentServer and refreshInterval in dependencies to refetch when they change
+  }, [fetchData, currentServer, refreshInterval]);
 
   const containerStatusData = [
     { name: 'Running', value: systemInfo?.ContainersRunning || 0 },
@@ -81,7 +245,9 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+      </div>
 
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
@@ -94,7 +260,13 @@ export default function Dashboard() {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-gray-700 dark:text-gray-300 font-medium">Loading dashboard data...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              {currentServer ? `Fetching data from ${currentServer.name}` : 'Please wait while we fetch the latest information'}
+            </p>
+          </div>
         </div>
       ) : (
         <>
@@ -184,9 +356,9 @@ export default function Dashboard() {
                   {containers.slice(0, 5).map((container) => (
                     <tr key={container.Id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`/containers/${container.Id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                        <a href={`/containers/${container.Id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                           {container.Names[0].replace('/', '')}
-                        </Link>
+                        </a>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-900 dark:text-gray-300">{container.Image}</span>
@@ -224,9 +396,12 @@ export default function Dashboard() {
             </div>
             {containers.length > 5 && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <Link href="/containers" className="text-blue-600 dark:text-blue-400 hover:underline">
-                  View all containers
-                </Link>
+                <a href="/containers" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center">
+                  <span>View all containers</span>
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </a>
               </div>
             )}
           </div>

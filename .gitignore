@@ -42,3 +42,4 @@ next-env.d.ts
 
 # database files
 /server/data/db.json
+!/server/data/.gitkeep

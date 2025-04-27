@@ -133,6 +133,17 @@ export default function Sidebar() {
                   Volumes
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  href="/servers"
+                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                  onClick={closeMobileMenu}
+                >
+                  <FaServer className="mr-3 h-5 w-5" />
+                  Remote Servers
+                </NavLink>
+              </li>
             </ul>
 
             <div className="mt-8">

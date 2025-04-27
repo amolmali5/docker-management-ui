@@ -2,18 +2,19 @@ const express = require('express');
 const router = express.Router();
 const Dockerode = require('dockerode');
 const { writeAuth } = require('../middleware/auth');
+const remoteDocker = require('../middleware/remote-docker');
 
-// Initialize Docker client
-const docker = new Dockerode();
+// Apply remote Docker middleware to all routes
+router.use(remoteDocker);
 
 // Get all volumes with usage information
 router.get('/', async (req, res) => {
   try {
     // Get all volumes
-    const volumesResponse = await docker.listVolumes();
+    const volumesResponse = await req.docker.listVolumes();
 
     // Get all containers to check which volumes are in use
-    const containers = await docker.listContainers({ all: true });
+    const containers = await req.docker.listContainers({ all: true });
 
     // Create a map of volume names to their usage status and container info
     const volumeUsage = {};
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
     // Check each container for volume mounts
     for (const container of containers) {
       // Get detailed container info to access Mounts
-      const containerInfo = await docker.getContainer(container.Id).inspect();
+      const containerInfo = await req.docker.getContainer(container.Id).inspect();
       const containerName = containerInfo.Name.replace(/^\//, ''); // Remove leading slash
 
       // Check each mount to see if it's a volume
@@ -34,7 +35,7 @@ router.get('/', async (req, res) => {
                 containers: []
               };
             }
-            
+
             // Add container info to the volume usage
             volumeUsage[mount.Name].containers.push({
               Id: container.Id,
@@ -64,18 +65,18 @@ router.get('/', async (req, res) => {
 // Get volume details with usage information
 router.get('/:name', async (req, res) => {
   try {
-    const volume = docker.getVolume(req.params.name);
+    const volume = req.docker.getVolume(req.params.name);
     const volumeInfo = await volume.inspect();
 
     // Check if the volume is being used by any container
-    const containers = await docker.listContainers({ all: true });
+    const containers = await req.docker.listContainers({ all: true });
     let inUse = false;
     const usedByContainers = [];
 
     // Check each container for volume mounts
     for (const container of containers) {
       // Get detailed container info to access Mounts
-      const containerInfo = await docker.getContainer(container.Id).inspect();
+      const containerInfo = await req.docker.getContainer(container.Id).inspect();
       const containerName = containerInfo.Name.replace(/^\//, ''); // Remove leading slash
 
       // Check each mount to see if it's using this volume
@@ -121,7 +122,7 @@ router.post('/', writeAuth, (req, res) => {
     Labels: labels || {}
   };
 
-  docker.createVolume(options)
+  req.docker.createVolume(options)
     .then(volume => {
       res.status(201).json(volume);
     })
@@ -136,7 +137,7 @@ router.post('/', writeAuth, (req, res) => {
 
 // Delete a volume
 router.delete('/:name', writeAuth, (req, res) => {
-  const volume = docker.getVolume(req.params.name);
+  const volume = req.docker.getVolume(req.params.name);
 
   volume.remove()
     .then(() => {

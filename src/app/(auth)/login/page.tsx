@@ -18,15 +18,15 @@ export default function LoginPage() {
   const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Clear any existing tokens and check authentication
+  // Check authentication and redirect to dashboard
   useEffect(() => {
-    // Clear any existing tokens to force re-authentication
-    // if (typeof window !== 'undefined') {
-    //   localStorage.removeItem('token');
-    // }
-
-    // Only redirect if properly authenticated
-    if (!authLoading && isAuthenticated) {
+    let isRedirecting = false;
+    
+    // Only redirect if properly authenticated and not already redirecting
+    if (!authLoading && isAuthenticated && !isRedirecting) {
+      isRedirecting = true;
+      console.log('User is authenticated, redirecting to dashboard');
+      // Use router.push instead of window.location for more controlled navigation
       router.push('/dashboard');
     }
   }, [isAuthenticated, authLoading, router]);
@@ -64,8 +64,19 @@ export default function LoginPage() {
       if (response.data.token) {
         // Store token in localStorage
         localStorage.setItem('token', response.data.token);
+
+        // Set redirect flag
+        localStorage.setItem('redirectToDashboard', 'true');
+
+        // Set a flag to ignore server connection errors on first load
+        localStorage.setItem('ignoreConnectionErrors', 'true');
+
         // Update auth context
-        login(username, password);
+        await login(username, password);
+
+        // Force navigation to dashboard with a direct window location change
+        window.location.href = '/dashboard';
+        return; // Stop execution here
       }
     } catch (error: any) {
       console.log('Login error:', error);
@@ -74,6 +85,10 @@ export default function LoginPage() {
       if (error.response && error.response.status === 400) {
         setError(`${error.response.data.error || 'Invalid credentials'}`);
         setDebugMessage(''); // Clear debug message
+      } else if (error.response && error.response.status === 500) {
+        setError(`Server error: ${error.response.data.error || 'Internal server error'}. Please try again later.`);
+      } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+        setError('Cannot connect to the server. Please check your network connection or try again later.');
       } else {
         setError(`Login failed: ${error.message}`);
         setDebugMessage(''); // Clear debug message
@@ -204,3 +219,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

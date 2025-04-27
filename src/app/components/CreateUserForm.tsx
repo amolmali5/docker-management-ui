@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FaUser, FaEnvelope, FaLock, FaUserShield, FaEye, FaEyeSlash, FaExclamationTriangle } from 'react-icons/fa';
 import api from '../utils/api';
 import { validatePassword } from '../utils/passwordValidation';
+import ServerAccessManager from './ServerAccessManager';
 
 interface CreateUserFormProps {
   onSuccess: () => void;
@@ -15,7 +16,8 @@ export default function CreateUserForm({ onSuccess, onCancel }: CreateUserFormPr
     username: '',
     email: '',
     password: '',
-    role: 'read'
+    role: 'read',
+    serverAccess: { type: 'all' }
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -193,6 +195,15 @@ export default function CreateUserForm({ onSuccess, onCancel }: CreateUserFormPr
               <option value="admin">Admin</option>
             </select>
           </div>
+        </div>
+
+        <div className="mt-6 mb-6">
+          <ServerAccessManager
+            userId={0} // Temporary ID for new user
+            initialServerAccess={formData.serverAccess}
+            onSave={(serverAccess) => setFormData(prev => ({ ...prev, serverAccess }))}
+            disabled={loading}
+          />
         </div>
 
         <div className="flex justify-end">

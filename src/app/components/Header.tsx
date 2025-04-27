@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FaBell, FaUser, FaCog, FaSignOutAlt, FaMoon, FaSun } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import ServerSelector from './ServerSelector';
 
 export default function Header() {
   const { user, logout, updateUserSettings } = useAuth();
@@ -23,6 +24,7 @@ export default function Header() {
     if (pathname === '/images') return 'Images';
     if (pathname === '/networks') return 'Networks';
     if (pathname === '/volumes') return 'Volumes';
+    if (pathname === '/servers') return 'Docker Servers';
     if (pathname === '/profile') return 'Your Profile';
     if (pathname === '/settings') return 'Settings';
     if (pathname === '/login') return 'Login';
@@ -102,6 +104,9 @@ export default function Header() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Server Selector */}
+            {user && <ServerSelector />}
+
             {/* Dark mode toggle */}
             <button
               type="button"

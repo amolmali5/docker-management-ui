@@ -3,9 +3,12 @@
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
+import { useServer } from '../context/ServerContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ChangePasswordForm from '../components/ChangePasswordForm';
+import ContentLoader from '../components/ContentLoader';
+import ContentBlocker from '../components/ContentBlocker';
 
 export default function DashboardLayout({
   children,
@@ -13,6 +16,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { switchingServer } = useServer();
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const router = useRouter();
 
@@ -56,10 +60,18 @@ export default function DashboardLayout({
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
-          {children}
-        </main>
+        <div className="relative flex-1 overflow-hidden">
+          {/* Main content area with ContentBlocker */}
+          <main className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            <div id="main-content-area" className="p-4 h-full overflow-y-auto">
+              <ContentBlocker>
+                {children}
+              </ContentBlocker>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
 }
+

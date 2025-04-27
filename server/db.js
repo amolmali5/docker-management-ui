@@ -20,6 +20,7 @@ async function initializeDb() {
   // Set default data if not initialized
   db.defaults({
     users: [],
+    servers: [],
     settings: {
       defaultRefreshRate: 10000,
       defaultTheme: 'light'

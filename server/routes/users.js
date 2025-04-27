@@ -40,7 +40,8 @@ router.get('/', adminAuth, async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      serverAccess: user.serverAccess || { type: 'specific', serverIds: [] }
     }));
 
     res.json(users);
@@ -75,7 +76,8 @@ router.get('/:id', auth, async (req, res) => {
       email: user.email,
       role: user.role,
       createdAt: user.createdAt,
-      settings: user.settings
+      settings: user.settings,
+      serverAccess: user.serverAccess || { type: 'specific', serverIds: [] } // Default to no server access if not specified
     });
   } catch (err) {
     console.error(`Error getting user ${req.params.id}:`, err);
@@ -100,7 +102,7 @@ router.put('/:id', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const { username, email, password, role, settings } = req.body;
+    const { username, email, password, role, settings, serverAccess } = req.body;
 
     // Update fields if provided
     if (username) {
@@ -152,6 +154,31 @@ router.put('/:id', auth, async (req, res) => {
       db.get('users').find({ id: userId }).set('settings', { ...currentSettings, ...settings }).write();
     }
 
+    // Only admin can change server access
+    if (serverAccess && req.user.role === 'admin') {
+      // Validate server access
+      if (serverAccess.type === 'specific' && (!serverAccess.serverIds || !Array.isArray(serverAccess.serverIds))) {
+        return res.status(400).json({ error: 'Invalid server access configuration' });
+      }
+
+      // If specific servers are selected, verify they exist
+      if (serverAccess.type === 'specific' && serverAccess.serverIds.length > 0) {
+        const servers = db.get('servers').value() || [];
+        const serverIds = servers.map(server => server.id);
+
+        // Check if all specified server IDs exist
+        const invalidServerIds = serverAccess.serverIds.filter(id => !serverIds.includes(id));
+        if (invalidServerIds.length > 0) {
+          return res.status(400).json({
+            error: 'Some specified servers do not exist',
+            invalidServerIds
+          });
+        }
+      }
+
+      db.get('users').find({ id: userId }).set('serverAccess', serverAccess).write();
+    }
+
     // Get updated user
     const updatedUser = db.get('users').find({ id: userId }).value();
 
@@ -161,7 +188,8 @@ router.put('/:id', auth, async (req, res) => {
       username: updatedUser.username,
       email: updatedUser.email,
       role: updatedUser.role,
-      settings: updatedUser.settings
+      settings: updatedUser.settings,
+      serverAccess: updatedUser.serverAccess || { type: 'specific', serverIds: [] }
     });
   } catch (err) {
     console.error(`Error updating user ${req.params.id}:`, err);
@@ -222,7 +250,8 @@ router.post('/', adminAuth, async (req, res) => {
       settings: {
         theme: db.get('settings.defaultTheme').value() || 'light',
         refreshRate: db.get('settings.defaultRefreshRate').value() || 10000
-      }
+      },
+      serverAccess: req.body.serverAccess || { type: 'specific', serverIds: [] } // Default to no server access if not specified
     };
 
     // Add to users array
@@ -234,7 +263,8 @@ router.post('/', adminAuth, async (req, res) => {
       username: newUser.username,
       email: newUser.email,
       role: newUser.role,
-      createdAt: newUser.createdAt
+      createdAt: newUser.createdAt,
+      serverAccess: newUser.serverAccess
     });
   } catch (err) {
     console.error('Error creating user:', err);
