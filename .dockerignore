@@ -38,4 +38,4 @@ yarn-error.log*
 
 # Local data
 server/data/*.json
-!server/data/db.json
+
