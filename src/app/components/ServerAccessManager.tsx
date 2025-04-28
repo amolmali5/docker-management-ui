@@ -176,7 +176,7 @@ const ServerAccessManager: React.FC<ServerAccessManagerProps> = ({
                 No servers available
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded">
+              <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded">
                 {servers.map(server => (
                   <div
                     key={server.id}

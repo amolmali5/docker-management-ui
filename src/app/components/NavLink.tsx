@@ -17,7 +17,7 @@ const NavLink: React.FC<NavLinkProps> = ({
   href,
   children,
   className = '',
-  activeClassName = 'bg-gray-100 dark:bg-gray-800',
+  activeClassName = 'bg-gray-100 dark:bg-gray-600',
   onClick
 }) => {
   const pathname = usePathname();

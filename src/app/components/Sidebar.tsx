@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { useServer } from '../context/ServerContext';
 import NavLink from './NavLink';
 import {
   FaDocker,
@@ -22,8 +23,20 @@ import {
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { servers, currentServer, error } = useServer();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hasOnlyOfflineServer, setHasOnlyOfflineServer] = useState(false);
+
+  // Check if user has access to only one server and it's offline
+  useEffect(() => {
+    // If there's only one server and it's offline
+    if (servers.length === 1 && servers[0].status === 'offline') {
+      setHasOnlyOfflineServer(true);
+    } else {
+      setHasOnlyOfflineServer(false);
+    }
+  }, [servers]);
 
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`);
@@ -69,80 +82,122 @@ export default function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-            <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
+            <div className="flex items-center">
               <FaDocker className="h-8 w-8 text-blue-500" />
               <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">Docker UI</span>
-            </Link>
+            </div>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-2 py-4 overflow-y-auto">
             <ul className="space-y-2">
               <li>
-                <NavLink
-                  href="/dashboard"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  onClick={closeMobileMenu}
-                >
-                  <FaChartLine className="mr-3 h-5 w-5" />
-                  Dashboard
-                </NavLink>
+                {hasOnlyOfflineServer ? (
+                  <div className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <FaChartLine className="mr-3 h-5 w-5" />
+                    Dashboard
+                  </div>
+                ) : (
+                  <NavLink
+                    href="/dashboard"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-500 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
+                    onClick={closeMobileMenu}
+                  >
+                    <FaChartLine className="mr-3 h-5 w-5" />
+                    Dashboard
+                  </NavLink>
+                )}
               </li>
               <li>
-                <NavLink
-                  href="/containers"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  onClick={closeMobileMenu}
-                >
-                  <FaServer className="mr-3 h-5 w-5" />
-                  Containers
-                </NavLink>
+                {hasOnlyOfflineServer ? (
+                  <div className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <FaServer className="mr-3 h-5 w-5" />
+                    Containers
+                  </div>
+                ) : (
+                  <NavLink
+                    href="/containers"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
+                    onClick={closeMobileMenu}
+                  >
+                    <FaServer className="mr-3 h-5 w-5" />
+                    Containers
+                  </NavLink>
+                )}
               </li>
               <li>
-                <NavLink
-                  href="/images"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  onClick={closeMobileMenu}
-                >
-                  <FaImage className="mr-3 h-5 w-5" />
-                  Images
-                </NavLink>
+                {hasOnlyOfflineServer ? (
+                  <div className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <FaImage className="mr-3 h-5 w-5" />
+                    Images
+                  </div>
+                ) : (
+                  <NavLink
+                    href="/images"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
+                    onClick={closeMobileMenu}
+                  >
+                    <FaImage className="mr-3 h-5 w-5" />
+                    Images
+                  </NavLink>
+                )}
               </li>
               <li>
-                <NavLink
-                  href="/networks"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  onClick={closeMobileMenu}
-                >
-                  <FaNetworkWired className="mr-3 h-5 w-5" />
-                  Networks
-                </NavLink>
+                {hasOnlyOfflineServer ? (
+                  <div className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <FaNetworkWired className="mr-3 h-5 w-5" />
+                    Networks
+                  </div>
+                ) : (
+                  <NavLink
+                    href="/networks"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    onClick={closeMobileMenu}
+                  >
+                    <FaNetworkWired className="mr-3 h-5 w-5" />
+                    Networks
+                  </NavLink>
+                )}
               </li>
               <li>
-                <NavLink
-                  href="/volumes"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  onClick={closeMobileMenu}
-                >
-                  <FaDatabase className="mr-3 h-5 w-5" />
-                  Volumes
-                </NavLink>
+                {hasOnlyOfflineServer ? (
+                  <div className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <FaDatabase className="mr-3 h-5 w-5" />
+                    Volumes
+                  </div>
+                ) : (
+                  <NavLink
+                    href="/volumes"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    onClick={closeMobileMenu}
+                  >
+                    <FaDatabase className="mr-3 h-5 w-5" />
+                    Volumes
+                  </NavLink>
+                )}
               </li>
               <li>
-                <NavLink
-                  href="/servers"
-                  className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                  activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
-                  onClick={closeMobileMenu}
-                >
-                  <FaServer className="mr-3 h-5 w-5" />
-                  Remote Servers
-                </NavLink>
+                {hasOnlyOfflineServer ? (
+                  <div className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                    <FaServer className="mr-3 h-5 w-5" />
+                    Remote Servers
+                  </div>
+                ) : (
+                  <NavLink
+                    href="/servers"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    onClick={closeMobileMenu}
+                  >
+                    <FaServer className="mr-3 h-5 w-5" />
+                    Remote Servers
+                  </NavLink>
+                )}
               </li>
             </ul>
 
@@ -155,7 +210,7 @@ export default function Sidebar() {
                   <NavLink
                     href="/profile"
                     className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
                     onClick={closeMobileMenu}
                   >
                     <FaUser className="mr-3 h-5 w-5" />
@@ -168,7 +223,7 @@ export default function Sidebar() {
                       <NavLink
                         href="/users"
                         className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
                         onClick={closeMobileMenu}
                       >
                         <FaUsers className="mr-3 h-5 w-5" />
@@ -179,7 +234,7 @@ export default function Sidebar() {
                       <NavLink
                         href="/settings"
                         className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
                         onClick={closeMobileMenu}
                       >
                         <FaCog className="mr-3 h-5 w-5" />

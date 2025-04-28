@@ -72,7 +72,7 @@ export default function CreateUserForm({ onSuccess, onCancel }: CreateUserFormPr
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
       <div className="mb-6">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New User</h2>
       </div>

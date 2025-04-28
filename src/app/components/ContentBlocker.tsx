@@ -2,17 +2,18 @@
 
 import React from 'react';
 import { useServer } from '../context/ServerContext';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 interface ContentBlockerProps {
   children: React.ReactNode;
 }
 
 const ContentBlocker: React.FC<ContentBlockerProps> = ({ children }) => {
-  const { dataReady, switchingServer, currentServer } = useServer();
+  const { dataReady, switchingServer, currentServer, error } = useServer();
 
-  // Only block content when switching servers
-  // We're removing the dataReady check to prevent blocking navigation
-  const shouldBlock = switchingServer;
+  // Block content when switching servers OR when data is not ready
+  // This ensures the loader stays visible until data is fully loaded
+  const shouldBlock = switchingServer || !dataReady;
 
   return (
     <div className="relative w-full h-full overflow-y-auto">
@@ -40,18 +41,62 @@ const ContentBlocker: React.FC<ContentBlockerProps> = ({ children }) => {
               WebkitBackdropFilter: 'blur(8px)',
             }}
           >
-            {/* Spinner */}
-            <div className="inline-block animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-blue-500 mb-5"></div>
+            {/* Check if there's an error about offline servers or backend server issues */}
+            {error && (error.includes('offline') || error.includes('backend server')) ? (
+              <>
+                {/* Warning icon for offline servers */}
+                <div className="flex justify-center mb-5">
+                  <FaExclamationTriangle className="h-14 w-14 text-yellow-500" />
+                </div>
 
-            {/* Primary message */}
-            <p className="text-gray-800 dark:text-gray-200 text-xl font-medium">
-              {currentServer ? `Loading data from ${currentServer.name}...` : 'Loading server data...'}
-            </p>
+                {/* Primary message */}
+                <p className="text-gray-800 dark:text-gray-200 text-xl font-medium">
+                  {error.includes('offline') ? 'Server Offline' : 'Connection Error'}
+                </p>
 
-            {/* Secondary message */}
-            <p className="text-gray-600 dark:text-gray-400 text-base mt-2">
-              Please wait while we fetch the latest information
-            </p>
+                {/* Error message */}
+                <p className="text-gray-600 dark:text-gray-400 text-base mt-2">
+                  {error}
+                </p>
+
+                {/* Advice */}
+                <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-left">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    <strong>What you can do:</strong>
+                  </p>
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc pl-5 space-y-1">
+                    {error.includes('backend server') ? (
+                      <>
+                        <li>The application server may not be running</li>
+                        <li>Contact your administrator for assistance</li>
+                        <li>Try refreshing the page after a few minutes</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>Check if the Docker server is running</li>
+                        <li>Verify your network connection</li>
+                        <li>Contact your administrator for assistance</li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Regular spinner for normal loading */}
+                <div className="inline-block animate-spin rounded-full h-14 w-14 border-t-3 border-b-3 border-blue-500 mb-5"></div>
+
+                {/* Primary message */}
+                <p className="text-gray-800 dark:text-gray-200 text-xl font-medium">
+                  {currentServer ? `Loading data from ${currentServer.name}...` : 'Loading server data...'}
+                </p>
+
+                {/* Secondary message */}
+                <p className="text-gray-600 dark:text-gray-400 text-base mt-2">
+                  Please wait while we fetch the latest information
+                </p>
+              </>
+            )}
           </div>
         </>
       )}

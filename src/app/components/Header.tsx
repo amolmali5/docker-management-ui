@@ -3,14 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FaBell, FaUser, FaCog, FaSignOutAlt, FaMoon, FaSun } from 'react-icons/fa';
+import { FaBell, FaUser, FaCog, FaSignOutAlt, FaMoon, FaSun, FaExclamationTriangle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { useServer } from '../context/ServerContext';
 import ServerSelector from './ServerSelector';
 
 export default function Header() {
   const { user, logout, updateUserSettings } = useAuth();
+  const { error, currentServer } = useServer();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showError, setShowError] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -94,8 +97,52 @@ export default function Header() {
     }
   }, [user]);
 
+  // Show error notification when error changes
+  useEffect(() => {
+    if (error) {
+      setShowError(true);
+
+      // Auto-hide the error after 10 seconds
+      const timer = setTimeout(() => {
+        setShowError(false);
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowError(false);
+    }
+  }, [error]);
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm z-10">
+      {/* Server error notification */}
+      {showError && error && (
+        <div className="bg-red-100 dark:bg-red-900 border-b border-red-200 dark:border-red-700 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <FaExclamationTriangle className="text-red-500 dark:text-red-400 mr-2" />
+              <span className="text-red-800 dark:text-red-200 text-sm font-medium">
+                {error}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowError(false)}
+              className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            >
+              <span className="sr-only">Dismiss</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {currentServer && currentServer.status === 'offline' && (
+            <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+              Server "{currentServer.name}" appears to be offline. Please check your connection settings or try again later.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -130,65 +177,65 @@ export default function Header() {
               <FaBell className="h-6 w-6" />
             </button>
 
-            {/* Profile dropdown */}
-            {user && (
-              <div className="relative" ref={menuRef}>
-                <button
-                  type="button"
-                  className="flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  id="user-menu-button"
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                    {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
-                  </div>
-                </button>
-                {isProfileMenuOpen && (
-                  <div
-                    className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="user-menu-button"
+              {/* Profile dropdown */}
+              {user && (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    type="button"
+                    className="flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    id="user-menu-button"
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   >
-                    <Link
-                      href="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                      role="menuitem"
-                      onClick={() => setIsProfileMenuOpen(false)}
+                    <span className="sr-only">Open user menu</span>
+                    <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                      {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
+                    </div>
+                  </button>
+                  {isProfileMenuOpen && (
+                    <div
+                      className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="user-menu-button"
                     >
-                      <FaUser className="mr-2 h-4 w-4" />
-                      Your Profile
-                    </Link>
-                    {user.role === 'admin' && (
                       <Link
-                        href="/settings"
+                        href="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                         role="menuitem"
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        <FaCog className="mr-2 h-4 w-4" />
-                        Settings
+                        <FaUser className="mr-2 h-4 w-4" />
+                        Your Profile
                       </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        logout();
-                      }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-left"
-                      role="menuitem"
-                    >
-                      <FaSignOutAlt className="mr-2 h-4 w-4" />
-                      Sign out
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                      {user.role === 'admin' && (
+                        <Link
+                          href="/settings"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          role="menuitem"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <FaCog className="mr-2 h-4 w-4" />
+                          Settings
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => {
+                          setIsProfileMenuOpen(false);
+                          logout();
+                        }}
+                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-left"
+                        role="menuitem"
+                      >
+                        <FaSignOutAlt className="mr-2 h-4 w-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </header>
-  );
-}
+      </header>
+    );
+  }

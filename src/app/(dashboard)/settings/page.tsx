@@ -195,14 +195,16 @@ export default function SettingsPage() {
         </div>
 
         {showChangePasswordForm && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <ChangePasswordForm
-              onSuccess={() => {
-                setShowChangePasswordForm(false);
-                setMessage('Password changed successfully');
-              }}
-              onCancel={() => setShowChangePasswordForm(false)}
-            />
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="relative">
+              <ChangePasswordForm
+                onSuccess={() => {
+                  setShowChangePasswordForm(false);
+                  setMessage('Password changed successfully');
+                }}
+                onCancel={() => setShowChangePasswordForm(false)}
+              />
+            </div>
           </div>
         )}
 
@@ -293,16 +295,18 @@ export default function SettingsPage() {
             </div>
 
             {showCreateUserForm && (
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                <CreateUserForm
-                  onSuccess={() => {
-                    setShowCreateUserForm(false);
-                    setMessage('User created successfully');
-                    // Refresh user list
-                    api.get('/api/users').then(res => setUsers(res.data));
-                  }}
-                  onCancel={() => setShowCreateUserForm(false)}
-                />
+              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                <div className="relative">
+                  <CreateUserForm
+                    onSuccess={() => {
+                      setShowCreateUserForm(false);
+                      setMessage('User created successfully');
+                      // Refresh user list
+                      api.get('/api/users').then(res => setUsers(res.data));
+                    }}
+                    onCancel={() => setShowCreateUserForm(false)}
+                  />
+                </div>
               </div>
             )}
 

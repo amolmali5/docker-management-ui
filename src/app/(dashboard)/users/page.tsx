@@ -154,33 +154,37 @@ export default function UsersPage() {
       </div>
 
       {showCreateForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <CreateUserForm
-            onSuccess={() => {
-              setShowCreateForm(false);
-              setMessage('User created successfully');
-              fetchUsers(); // Refresh the users list
-            }}
-            onCancel={() => setShowCreateForm(false)}
-          />
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="relative">
+            <CreateUserForm
+              onSuccess={() => {
+                setShowCreateForm(false);
+                setMessage('User created successfully');
+                fetchUsers(); // Refresh the users list
+              }}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </div>
         </div>
       )}
 
       {showServerAccessForm && selectedUserId && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <EditUserServerAccess
-            userId={selectedUserId}
-            onSuccess={() => {
-              setShowServerAccessForm(false);
-              setSelectedUserId(null);
-              setMessage('Server access updated successfully');
-              fetchUsers(); // Refresh the users list
-            }}
-            onCancel={() => {
-              setShowServerAccessForm(false);
-              setSelectedUserId(null);
-            }}
-          />
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="relative">
+            <EditUserServerAccess
+              userId={selectedUserId}
+              onSuccess={() => {
+                setShowServerAccessForm(false);
+                setSelectedUserId(null);
+                setMessage('Server access updated successfully');
+                fetchUsers(); // Refresh the users list
+              }}
+              onCancel={() => {
+                setShowServerAccessForm(false);
+                setSelectedUserId(null);
+              }}
+            />
+          </div>
         </div>
       )}
 

@@ -34,6 +34,25 @@ export default function ServerSelector() {
   }, [isOpen]);
 
   const handleServerSelect = (server: any) => {
+    // If we're already switching servers, don't allow another selection
+    if (switchingServer) {
+      return;
+    }
+
+    // If the server is the same as the current one, just close the dropdown
+    if (currentServer?.id === server.id) {
+      setIsOpen(false);
+      return;
+    }
+
+    // Check if the server is offline - don't allow selection of offline servers
+    if (server.status === 'offline') {
+      // Just close the dropdown without switching
+      setIsOpen(false);
+      return;
+    }
+
+    // Otherwise, switch to the selected server
     setCurrentServer(server);
     setIsOpen(false);
   };
@@ -99,19 +118,25 @@ export default function ServerSelector() {
                 <button
                   key={server.id}
                   onClick={() => handleServerSelect(server)}
-                  disabled={switchingServer}
+                  disabled={switchingServer || server.status === 'offline'}
                   className={`w-full text-left px-4 py-2 text-sm ${currentServer?.id === server.id
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    : server.status === 'offline'
+                      ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     } ${switchingServer ? 'opacity-50 cursor-wait' : ''}`}
                   role="menuitem"
+                  title={server.status === 'offline' ? `Server "${server.name}" is offline and cannot be selected` : ''}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <FaServer className="mr-3 text-gray-500 dark:text-gray-400" />
+                      <FaServer className={`mr-3 ${server.status === 'offline' ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'}`} />
                       <div className="flex flex-col">
-                        <span className="truncate font-medium">{server.name}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <span className={`truncate font-medium ${server.status === 'offline' ? 'text-gray-400 dark:text-gray-500' : ''}`}>
+                          {server.name}
+                          {server.status === 'offline' && ' (Offline - Cannot Select)'}
+                        </span>
+                        <span className={`text-xs truncate ${server.status === 'offline' ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>
                           {server.protocol}://{server.host}:{server.port}
                         </span>
                       </div>
@@ -121,7 +146,7 @@ export default function ServerSelector() {
                         server.status === 'online'
                           ? 'Server is online'
                           : server.status === 'offline'
-                            ? 'Server is offline'
+                            ? 'Server is offline - cannot be selected'
                             : 'Server status unknown'
                       }
                     >

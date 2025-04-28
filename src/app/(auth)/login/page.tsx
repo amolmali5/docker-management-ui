@@ -21,7 +21,7 @@ export default function LoginPage() {
   // Check authentication and redirect to dashboard
   useEffect(() => {
     let isRedirecting = false;
-    
+
     // Only redirect if properly authenticated and not already redirecting
     if (!authLoading && isAuthenticated && !isRedirecting) {
       isRedirecting = true;
@@ -205,14 +205,14 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center text-sm">
+          {/* <div className="text-center text-sm">
             <p className="text-gray-600 dark:text-gray-400">
               Don't have an account?{' '}
               <Link href="/register" className="text-blue-600 hover:text-blue-500 dark:text-blue-400">
                 Register
               </Link>
             </p>
-          </div>
+          </div> */}
 
         </form>
       </div>
