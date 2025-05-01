@@ -55,7 +55,7 @@ export default function ServersPage() {
   const handleTestConnection = async (id: string) => {
     try {
       const response = await api.post(`/api/servers/${id}/test`);
-      const updatedServers = servers.map(server => 
+      const updatedServers = servers.map(server =>
         server.id === id ? { ...server, status: response.data.success ? 'online' : 'offline' } : server
       );
       setServers(updatedServers);
@@ -68,7 +68,7 @@ export default function ServersPage() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Docker Servers</h1>
+        <h1 className="text-2xl font-bold dark:text-gray-500">Docker Servers</h1>
         <button
           onClick={() => setShowAddModal(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -123,13 +123,12 @@ export default function ServersPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        server.status === 'online' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-                          : server.status === 'offline'
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs rounded-full ${server.status === 'online'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : server.status === 'offline'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
                         {server.status === 'online' ? 'Online' : server.status === 'offline' ? 'Offline' : 'Unknown'}
                       </span>
                       <button
@@ -163,17 +162,17 @@ export default function ServersPage() {
       )}
 
       {showAddModal && (
-        <AddServerModal 
-          onClose={() => setShowAddModal(false)} 
-          onServerAdded={fetchServers} 
+        <AddServerModal
+          onClose={() => setShowAddModal(false)}
+          onServerAdded={fetchServers}
         />
       )}
 
       {editServer && (
-        <EditServerModal 
-          server={editServer} 
-          onClose={() => setEditServer(null)} 
-          onServerUpdated={fetchServers} 
+        <EditServerModal
+          server={editServer}
+          onClose={() => setEditServer(null)}
+          onServerUpdated={fetchServers}
         />
       )}
     </div>

@@ -147,7 +147,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{getPageTitle()}</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-400">{getPageTitle()}</h1>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -169,13 +169,13 @@ export default function Header() {
             </button>
 
             {/* Notifications */}
-            <button
+            {/* <button
               type="button"
               className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <span className="sr-only">View notifications</span>
               <FaBell className="h-6 w-6" />
-            </button>
+            </button> */}
 
               {/* Profile dropdown */}
               {user && (
@@ -200,7 +200,7 @@ export default function Header() {
                     >
                       <Link
                         href="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                         role="menuitem"
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
@@ -210,7 +210,7 @@ export default function Header() {
                       {user.role === 'admin' && (
                         <Link
                           href="/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                           role="menuitem"
                           onClick={() => setIsProfileMenuOpen(false)}
                         >
@@ -223,7 +223,7 @@ export default function Header() {
                           setIsProfileMenuOpen(false);
                           logout();
                         }}
-                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-left"
+                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-left"
                         role="menuitem"
                       >
                         <FaSignOutAlt className="mr-2 h-4 w-4" />

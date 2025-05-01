@@ -661,7 +661,7 @@ export default function ContainersPage() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Containers</h1>
+        <h1 className="text-2xl font-bold dark:text-gray-500">Containers</h1>
         <div className="flex items-center space-x-4">
           {hasWriteAccess && selectedContainers.length > 0 && (
             <button

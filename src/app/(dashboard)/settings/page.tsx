@@ -127,7 +127,7 @@ export default function SettingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-500 mb-6">
         <FaCog className="inline-block mr-2" />
         Application Settings
       </h1>
@@ -220,7 +220,7 @@ export default function SettingsPage() {
                     id="defaultTheme"
                     value={settings.defaultTheme}
                     onChange={(e) => setSettings({ ...settings, defaultTheme: e.target.value })}
-                    className="mt-1 block w-full pl-3 pr-10 py-3 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    className="mt-1 block w-full pl-3 pr-10 py-3 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                   >
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                     id="defaultRefreshRate"
                     value={settings.defaultRefreshRate}
                     onChange={(e) => setSettings({ ...settings, defaultRefreshRate: Number(e.target.value) })}
-                    className="mt-1 block w-full pl-3 pr-10 py-3 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    className="mt-1 block w-full pl-3 pr-10 py-3 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                   >
                     <option value={5000}>5 seconds</option>
                     <option value={10000}>10 seconds</option>
@@ -262,11 +262,11 @@ export default function SettingsPage() {
         {activeTab === 'security' && (
           <div className="px-4 py-5 sm:p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Security Settings</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-400">Security Settings</h3>
             </div>
 
             <div className="bg-white dark:bg-gray-800 p-4 rounded-md shadow-sm mb-6">
-              <h4 className="text-md font-medium text-gray-900 dark:text-white mb-2">Change Password</h4>
+              <h4 className="text-md font-medium text-gray-900 dark:text-gray-400 mb-2">Change Password</h4>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Update your password to maintain account security.
               </p>
@@ -284,7 +284,7 @@ export default function SettingsPage() {
         {activeTab === 'users' && (
           <div className="px-4 py-5 sm:p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">User Management</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-400">User Management</h3>
               <button
                 onClick={() => setShowCreateUserForm(true)}
                 className="inline-flex items-center px-5 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -349,7 +349,7 @@ export default function SettingsPage() {
                           <select
                             value={userItem.role}
                             onChange={(e) => handleUserRoleChange(userItem.id, e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                            className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                             disabled={userItem.id === user?.id} // Can't change own role
                           >
                             <option value="read">Read Only</option>

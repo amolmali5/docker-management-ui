@@ -22,9 +22,9 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
@@ -46,14 +46,14 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Create New Network</h2>
-      
+      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-400">Create New Network</h2>
+
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
           <p>{error}</p>
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="name">
@@ -75,7 +75,7 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
             />
           </div>
         </div>
-        
+
         <div className="mb-4">
           <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="driver">
             Driver
@@ -100,7 +100,7 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
             </select>
           </div>
         </div>
-        
+
         <div className="mb-4">
           <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="subnet">
             Subnet (Optional)
@@ -120,7 +120,7 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
             />
           </div>
         </div>
-        
+
         <div className="mb-4">
           <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="gateway">
             Gateway (Optional)
@@ -140,7 +140,7 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
             />
           </div>
         </div>
-        
+
         <div className="mb-6">
           <div className="flex items-center">
             <input
@@ -156,7 +156,7 @@ export default function CreateNetworkForm({ onSuccess, onCancel }: CreateNetwork
             </label>
           </div>
         </div>
-        
+
         <div className="flex justify-end space-x-3">
           <button
             type="button"

@@ -103,7 +103,7 @@ const ServerAccessManager: React.FC<ServerAccessManagerProps> = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Server Access</h3>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-400 mb-4">Server Access</h3>
 
       {error && (
         <div className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 p-3 rounded mb-4">

@@ -98,7 +98,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Profile</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-500 mb-6">Your Profile</h1>
 
       {message && (
         <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 flex justify-between items-center" role="alert">
@@ -167,7 +167,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="sm:col-span-2">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Change Password</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-500 mb-3">Change Password</h3>
 
                 <div className="space-y-4">
                   <div>
@@ -286,7 +286,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="sm:col-span-2">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Preferences</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-500 mb-3">Preferences</h3>
 
                 <div className="space-y-4">
                   <div>

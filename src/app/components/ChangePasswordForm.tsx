@@ -81,7 +81,7 @@ export default function ChangePasswordForm({ onSuccess, onCancel, isFirstLogin =
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-400">
           {isFirstLogin ? 'Change Default Password' : 'Change Password'}
         </h2>
       </div>

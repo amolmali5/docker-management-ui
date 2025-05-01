@@ -24,11 +24,11 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
       setError('');
-      
+
       const serverData = {
         name,
         host,
@@ -36,7 +36,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
         protocol,
         ...(useTLS && { ca, cert, key })
       };
-      
+
       await api.post('/api/servers', serverData);
       onServerAdded();
       onClose();
@@ -53,14 +53,14 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
       setLoading(true);
       setError('');
       setTestStatus('none');
-      
+
       const serverData = {
         host,
         port: parseInt(port),
         protocol,
         ...(useTLS && { ca, cert, key })
       };
-      
+
       const response = await api.post('/api/servers/test', serverData);
       setTestStatus(response.data.success ? 'success' : 'failure');
       if (!response.data.success) {
@@ -79,7 +79,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
       <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 md:mx-auto">
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Add Docker Server</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-400">Add Docker Server</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
@@ -87,20 +87,20 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
             <FaTimes />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-4">
           {error && (
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
               <p>{error}</p>
             </div>
           )}
-          
+
           {testStatus === 'success' && (
             <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
               <p>Connection successful!</p>
             </div>
           )}
-          
+
           <div className="mb-4">
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Server Name
@@ -115,7 +115,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
               required
             />
           </div>
-          
+
           <div className="mb-4">
             <label htmlFor="host" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Host
@@ -130,7 +130,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
               required
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label htmlFor="protocol" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -151,7 +151,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
                 <option value="https">HTTPS</option>
               </select>
             </div>
-            
+
             <div>
               <label htmlFor="port" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Port
@@ -167,7 +167,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
               />
             </div>
           </div>
-          
+
           <div className="mb-4">
             <div className="flex items-center">
               <input
@@ -183,7 +183,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
               </label>
             </div>
           </div>
-          
+
           {useTLS && (
             <>
               <div className="mb-4">
@@ -199,7 +199,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
                   rows={3}
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label htmlFor="cert" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Client Certificate
@@ -214,7 +214,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
                   required={useTLS}
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label htmlFor="key" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Client Key
@@ -231,7 +231,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
               </div>
             </>
           )}
-          
+
           <div className="flex justify-between mt-6">
             <button
               type="button"
@@ -241,7 +241,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
             >
               Test Connection
             </button>
-            
+
             <div className="flex space-x-3">
               <button
                 type="button"
@@ -250,7 +250,7 @@ export default function AddServerModal({ onClose, onServerAdded }: AddServerModa
               >
                 Cancel
               </button>
-              
+
               <button
                 type="submit"
                 disabled={loading}

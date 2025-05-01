@@ -84,7 +84,7 @@ export default function Sidebar() {
           <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
               <FaDocker className="h-8 w-8 text-blue-500" />
-              <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">Docker UI</span>
+              <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700">Docker UI</span>
             </div>
           </div>
 
@@ -100,7 +100,7 @@ export default function Sidebar() {
                 ) : (
                   <NavLink
                     href="/dashboard"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                     activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-500 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
@@ -118,7 +118,7 @@ export default function Sidebar() {
                 ) : (
                   <NavLink
                     href="/containers"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                     activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
@@ -136,7 +136,7 @@ export default function Sidebar() {
                 ) : (
                   <NavLink
                     href="/images"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                     activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
@@ -154,8 +154,8 @@ export default function Sidebar() {
                 ) : (
                   <NavLink
                     href="/networks"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
                     <FaNetworkWired className="mr-3 h-5 w-5" />
@@ -172,8 +172,8 @@ export default function Sidebar() {
                 ) : (
                   <NavLink
                     href="/volumes"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
                     <FaDatabase className="mr-3 h-5 w-5" />
@@ -190,8 +190,8 @@ export default function Sidebar() {
                 ) : (
                   <NavLink
                     href="/servers"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
                     <FaServer className="mr-3 h-5 w-5" />
@@ -209,8 +209,8 @@ export default function Sidebar() {
                 <li>
                   <NavLink
                     href="/profile"
-                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                    className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                    activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                     onClick={closeMobileMenu}
                   >
                     <FaUser className="mr-3 h-5 w-5" />
@@ -222,8 +222,8 @@ export default function Sidebar() {
                     <li>
                       <NavLink
                         href="/users"
-                        className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                        className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                        activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                         onClick={closeMobileMenu}
                       >
                         <FaUsers className="mr-3 h-5 w-5" />
@@ -233,8 +233,8 @@ export default function Sidebar() {
                     <li>
                       <NavLink
                         href="/settings"
-                        className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                        activeClassName="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-white"
+                        className="flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
+                        activeClassName="bg-blue-100 text-blue-700 dark:bg-gray-600 dark:text-white border-l-4 border-blue-500 dark:border-blue-400"
                         onClick={closeMobileMenu}
                       >
                         <FaCog className="mr-3 h-5 w-5" />
@@ -251,7 +251,7 @@ export default function Sidebar() {
                       // Force redirect to root
                       window.location.href = '/';
                     }}
-                    className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
                     <FaSignOutAlt className="mr-3 h-5 w-5" />
                     Logout

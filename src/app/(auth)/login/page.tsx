@@ -124,7 +124,7 @@ export default function LoginPage() {
              */}
             <img src={image.src} alt="Docker" className="h-24 w-40" />
           </div>
-          <h2 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-gray-300">
             Docker Management UI
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">

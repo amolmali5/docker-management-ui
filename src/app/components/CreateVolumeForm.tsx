@@ -40,7 +40,7 @@ export default function CreateVolumeForm({ onSuccess, onCancel }: CreateVolumeFo
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Create New Volume</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-400">Create New Volume</h2>
       
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">

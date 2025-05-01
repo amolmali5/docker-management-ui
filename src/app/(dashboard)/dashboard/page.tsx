@@ -442,7 +442,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-500">Dashboard</h1>
       </div>
 
       {error && (
@@ -587,7 +587,7 @@ export default function Dashboard() {
           {/* Container Status Chart */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Container Status</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-500">Container Status</h2>
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Total Containers: <span className="font-semibold text-gray-700 dark:text-gray-300">{systemInfo?.Containers || 0}</span>
               </div>
@@ -662,7 +662,7 @@ export default function Dashboard() {
           {/* Recent Containers */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold">Recent Containers</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-500">Recent Containers</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">

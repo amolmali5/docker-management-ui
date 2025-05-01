@@ -69,7 +69,7 @@ export default function Home() {
           <div className="flex justify-center">
             <FaDocker className="h-12 w-12 text-blue-500" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-gray-300">
             Docker Management UI
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">

@@ -15,7 +15,6 @@ import {
 import Link from 'next/link';
 import NavLink from '../components/NavLink';
 // We don't need to import PageLoading here as it's used in the layout
-//mdnhf
 
 interface ContainerSummary {
   Id: string;
