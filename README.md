@@ -193,6 +193,32 @@ The application automatically creates a database file (`server/data/db.json`) wi
 
 This application requires access to the Docker socket (`/var/run/docker.sock`) to communicate with the Docker daemon. This gives the application full control over your Docker environment, so be careful when deploying it in production environments.
 
+## Remote Server Management
+
+The Docker Management UI supports connecting to and managing remote Docker servers:
+
+- Connect to multiple Docker servers from a single interface
+- Support for both HTTP (port 2375) and HTTPS with TLS (port 2376) connections
+- Secure connections with client certificate authentication
+- Real-time server status monitoring
+- Easy switching between local and remote Docker environments
+
+For detailed setup instructions, see the documentation in the `docs/remote-servers` directory:
+- [Quick Start Guide](docs/remote-servers/quick-start.md)
+- [HTTP Setup Guide](docs/remote-servers/http-setup.md)
+- [HTTPS Setup Guide](docs/remote-servers/https-setup.md)
+- [Troubleshooting](docs/remote-servers/troubleshooting.md)
+- [Security Considerations](docs/remote-servers/security.md)
+
+### Connection Options
+
+| Protocol | Port | Security | Use Case |
+|----------|------|----------|----------|
+| HTTP     | 2375 | None     | Development, trusted networks |
+| HTTPS    | 2376 | TLS      | Production, untrusted networks |
+
+> **Security Note**: When exposing Docker API endpoints, always consider the security implications. For production environments, use HTTPS with TLS client verification.
+
 ## Project Structure
 
 ```
@@ -260,3 +286,4 @@ Contributions are welcome! Here's how you can contribute to this project:
 ## License
 
 MIT
+
